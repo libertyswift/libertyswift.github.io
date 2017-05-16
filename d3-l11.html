@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>D3 simple example</title>
+	<style>
+		.axis text {
+			font-family: sans-serif;
+			font-size: 11px;
+		}
+
+		.axis2 text {
+			font-family: sans-serif;
+			font-size: 10px;
+		}
+
+		.legend text {
+			font-family: sans-serif;
+			font-size: 11px;
+		}
+	</style>
+	<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+	<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment.min.js"></script>
+	<script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
+	<script type="text/javascript" src="d3.simple.chart.js"></script>
+</head>
+<body>
+<style>
+	.axis text {
+		font: 10px sans-serif;
+	}
+	.axis path, .axis line {
+		fill: none;
+		stroke: #000;
+		shape-rendering: crispEdges;
+	}
+
+	.avg-line {
+	fill: none;
+	stroke: red;
+	stroke-width: 1px;
+		stroke-dasharray: 5px;
+	}
+	rect:hover {
+		opacity: 0.7;
+	}
+</style>
+<script>
+	var x = null;
+    d3.json("data.json", function(error, data) {
+    var arr = [];
+    var arr2 = [];
+    var startTime = moment('2017-04-06 11:00:33');
+    var endTime = moment('2017-04-06 17:01:33');
+    var intervalTime_1 = moment(startTime);
+    var intervalTime_2 = moment(intervalTime_1).add(30, 'm');
+	var data5 = [];
+	var plus = [];
+	var minus = [];
+
+	var minLand = d3.min(data, function(d) { return d.first_activity_at; });
+	console.log(minLand);
+
+// - Диномическая шкала времени
+    for ( startTime; moment(startTime).isBefore(endTime); startTime.add(30, 'm')) {
+        arr.push(startTime.format("HH:mm"));
+        arr2.push(startTime);
+    }
+    function barStack(seriesData) {
+            var l = seriesData[0].length;
+            while (l--) {
+                var posBase = 0; // positive base
+                var negBase = 0; // negative base
+                seriesData.forEach(function(d) {
+                    d = d[l];
+                    d.size = Math.abs(d.y)
+                    if (d.y < 0) {
+                        d.y0 = negBase
+                        negBase -= d.size
+                    } else
+                    {
+                        d.y0 = posBase = posBase + d.size
+                    }
+                })
+            }
+            seriesData.extent = d3.extent(
+                d3.merge(
+                    d3.merge(
+                        seriesData.map(function(e) {
+                            return e.map(function(f) { return [f.y0,f.y0-f.size] })
+                        })
+                    )
+                )
+            );
+
+        }
+// - Пришли Ушли (количество людей в промежуток времени)
+	for (intervalTime_1; moment(intervalTime_1).isBefore(endTime); intervalTime_1.add(30, 'm'), intervalTime_2.add(30, 'm')) {
+		var var_1 = data.filter(function(d) {
+			return moment(d.ajax_acitivity_start).isAfter(intervalTime_1) && moment(d.ajax_acitivity_start).isBefore(intervalTime_2);
+		});
+		var var_1_out = data.filter(function(d) {
+			return moment(d.ajax_acitivity_end).isAfter(intervalTime_1) & moment(d.ajax_acitivity_end).isBefore(intervalTime_2);
+
+		});
+
+		plus.push({y: var_1.length});
+		minus.push({y: var_1_out.length*(-1)});
+
+//            console.log(JSON.stringify(var_1.length));
+//            console.log(JSON.stringify(var_1_out.length*(-1)));
+	}
+	data5.push(plus);
+	data5.push(minus);
+    var h = 500;
+    var w = 800;
+    var margin = 40;
+//    var color = d3.scale.category10();
+    var colors = ['#00B1AC',
+        '#FD4239',
+		'#FFD200',
+        '#FD4239'
+            ]; // Массив с нужными цветами
+
+        var color = d3.scale.ordinal()
+            .range(colors);
+
+
+        var colors2 =	[ ["Зашли", "#00B1AC"],
+            ["Вышли", "#FD4239"] ];
+
+
+
+
+    barStack(data5);
+//    barStack(data);
+     x = d3.scale.ordinal()
+        .domain(arr)
+        .rangeRoundBands([ margin, w - margin ], .1)
+
+    var y = d3.scale.linear()
+        .range([h-margin,0+margin])
+        .domain(data5.extent);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom")
+        .tickSize(6, 0);
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+
+    svg = d3.select("body")
+        .append("svg")
+        .attr("height", h)
+        .attr("width", w)
+
+    svg.selectAll(".series")
+        .data(data5)
+        .enter()
+        .append("g")
+        .classed("series", true)
+        .style("fill", function(d,i) { return color(i) })
+        .style("opacity", 0.8)
+        .selectAll("rect")
+        .data(Object)
+        .enter()
+        .append("rect")
+        .attr("x", function(d, i) { return x(x.domain()[i]) })
+        .attr("y", function(d) { return y(d.y0) })
+		.attr("height", function(d) { return y(0) - y(d.size) })
+        .attr("width", x.rangeBand())
+        .on("mouseover", function() { tooltip.style("display", null); })
+        .on("mouseout", function() { tooltip.style("display", "none"); })
+        .on("mousemove", function(d) {
+            var xPosition = d3.mouse(this)[0] - 35;
+            var yPosition = d3.mouse(this)[1] - 5;
+            tooltip.attr("transform", "translate(" + xPosition + "," + yPosition + ")");
+            tooltip.select("text").text(d.y);
+        })
+
+        svg.selectAll('rect')
+		.attr("height", 0)
+        .transition()
+        .duration(200)
+        .delay(function (d, i) {
+            return i * 50;
+        })
+		.attr("height", function(d) { return y(0) - y(d.size) });
+
+    svg.append("g")
+        .attr("class", "axis x")
+        .attr("transform", "translate(0 " + y(0) + ")")
+        .call(xAxis)
+
+
+
+
+    svg.append("g")
+        .attr("class", "axis y")
+        .attr("transform", "translate(" + margin + " 0)")
+        .style("text-anchor","left")
+        .call(yAxis)
+        .append("text")
+		.attr("transform", "rotate(-90)")
+		.attr("y", 6)
+		.attr("x", -20)
+		.attr("dy", ".71em")
+		.style("text-anchor", "end")
+		.text("Quantity");
+
+
+
+		var val = x(x.domain()[2])+24;
+        var group = svg.append("g");
+		group.attr("class", "myGroup")
+		.attr("transform", "translate("+  val  +"  0)");
+        group.append('circle')
+		.attr({cx:0,cy:30,r:4,fill:'#FD4239','fill-opacity':1,stroke:'#FD4239','stroke-width':1});
+        var groupLine = group.append('g');
+        groupLine.append('line')
+		.attr("x1", "0")
+		.attr("x2", "0")
+		.attr("y1", margin)
+		.attr("y2", h-margin)
+		.style("stroke", "#FD4239")
+		.style("stroke-dasharray", "3")
+		.style("stroke-width", "1");
+        groupLine.append('text')
+		.text('Theoretical')
+		.attr({x:200,y:175,'text-anchor':'start','transform':'translate(-182,294) rotate(-90)'})
+		.style("font-family","Verdana")
+		.style("font-size","10px");
+
+
+        var valtwo = x(x.domain()[6])+24;
+        var group = svg.append("g");
+        group.attr("class", "myGroup")
+            .attr("transform", "translate("+ valtwo +"  0)");
+        group.append('circle')
+            .attr({cx:0,cy:30,r:4,fill:'#FD4239','fill-opacity':1,stroke:'#FD4239','stroke-width':1});
+        var groupLine = group.append('g');
+        groupLine.append('line')
+            .attr("x1", "0")
+            .attr("x2", "0")
+            .attr("y1", margin)
+            .attr("y2", h-margin)
+            .style("stroke", "#FD4239")
+            .style("stroke-dasharray", "3")
+            .style("stroke-width", "1");
+        groupLine.append('text')
+            .text('Practical')
+            .attr({x:200,y:175,'text-anchor':'start','transform':'translate(-182,294) rotate(-90)'})
+            .style("font-family","Verdana")
+            .style("font-size","10px");
+
+
+		
+        svg.append("text")
+            .attr("x", (w / 2))
+//            .attr("y", 0 +(margin/ 2))
+            .attr("y", 15)
+            .attr("text-anchor", "middle")
+            .style("font-size", "14px")
+//            .style("text-decoration", "underline")
+            .text("OMC Lecture Graph")
+        	.style("font-family","Verdana")
+        	.style("text-transform","uppercase");
+
+                /* Here we add tooltips */
+
+    // Prep the tooltip bits, initial display is hidden
+    var tooltip = svg.append("g")
+        .attr("class", "tooltip")
+        .style("display", "none");
+
+    tooltip.append("rect")
+        .attr("width", 30)
+        .attr("height", 20)
+        .attr("fill", "white")
+        .attr("rx", "3")
+        .style("stroke-width", "1")
+        .style("stroke", "#000");
+
+//        .style("opacity", 0.5);
+
+    tooltip.append("text")
+        .attr("x", 15)
+        .attr("dy", "1.2em")
+        .style("text-anchor", "middle")
+        .attr("font-size", "12px")
+        .attr("font-weight", "bold");
+
+        var legend = svg.append("g")
+            .attr("class", "legend")
+            //.attr("x", w - 65)
+            //.attr("y", 50)
+            .attr("height", 100)
+            .attr("width", 200)
+            .attr('transform', 'translate(15,30)');
+
+        var legendRect = legend.selectAll('rect').data(colors2);
+
+        legendRect.enter()
+            .append("rect")
+            .attr("x", w - 65)
+            .attr("width", 10)
+            .attr("height", 10);
+
+        legendRect
+            .attr("y", function(d, i) {
+                return i * 20;
+            })
+            .style("fill", function(d) {
+                return d[1];
+            });
+
+        var legendText = legend.selectAll('text').data(colors2);
+
+        legendText.enter()
+            .append("text")
+            .attr("x", w - 52);
+
+        legendText
+            .attr("y", function(d, i) {
+                return i * 20 + 9;
+            })
+            .text(function(d) {
+                return d[0];
+            });
+
+
+    });
+
+
+
+
+
+
+
+
+</script>
+</body>
+</html>
+
