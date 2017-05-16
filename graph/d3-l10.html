@@ -50,16 +50,22 @@
     d3.json("data.json", function(error, data) {
     var arr = [];
     var arr2 = [];
-    var startTime = moment('2017-04-06 11:00:33');
-    var endTime = moment('2017-04-06 17:01:33');
+
+
+
+    var startTime = moment.unix('1494586800');
+    var endTime = moment.unix('1494611428');
     var intervalTime_1 = moment(startTime);
     var intervalTime_2 = moment(intervalTime_1).add(30, 'm');
 	var data5 = [];
 	var plus = [];
 	var minus = [];
 
+        console.log(intervalTime_2.format("HH:mm"));
+
+
+//
 	var minLand = d3.min(data, function(d) { return d.first_activity_at; });
-	console.log(minLand);
 
 // - Диномическая шкала времени
     for ( startTime; moment(startTime).isBefore(endTime); startTime.add(30, 'm')) {
@@ -97,19 +103,21 @@
 // - Пришли Ушли (количество людей в промежуток времени)
 	for (intervalTime_1; moment(intervalTime_1).isBefore(endTime); intervalTime_1.add(30, 'm'), intervalTime_2.add(30, 'm')) {
 		var var_1 = data.filter(function(d) {
-			return moment(d.ajax_acitivity_start).isAfter(intervalTime_1) && moment(d.ajax_acitivity_start).isBefore(intervalTime_2);
+			return moment.unix(d.first_activity_at).isAfter(intervalTime_1) && moment.unix(d.first_activity_at).isBefore(intervalTime_2);
+
 		});
 		var var_1_out = data.filter(function(d) {
-			return moment(d.ajax_acitivity_end).isAfter(intervalTime_1) & moment(d.ajax_acitivity_end).isBefore(intervalTime_2);
+			return moment.unix(d.last_activity_at).isAfter(intervalTime_1) & moment.unix(d.last_activity_at).isBefore(intervalTime_2);
 
 		});
 
 		plus.push({y: var_1.length});
 		minus.push({y: var_1_out.length*(-1)});
 
-//            console.log(JSON.stringify(var_1.length));
+            console.log(JSON.stringify(var_1.length));
 //            console.log(JSON.stringify(var_1_out.length*(-1)));
 	}
+        console.log(data.length);
 	data5.push(plus);
 	data5.push(minus);
     var h = 500;
