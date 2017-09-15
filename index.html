@@ -12,6 +12,7 @@
   	<link rel="icon" type="image/png" href="/img/favicon(16X16).png" sizes="16x16">
     <link href="/css/app.min.css" rel="stylesheet">
     <script src="/js/app.min.js"></script>
+    <script src="/js/share.js"></script>
     <script>
         window.lazySizesConfig = window.lazySizesConfig || {};
         window.lazySizesConfig.customMedia = {
@@ -222,7 +223,25 @@
 		</div>
 	</main>
 	<footer class="footer">
-		
+		<div class="share">
+			<div class="row">
+				<div class="col-lg-12">
+					<div class="share">
+                        <span class="title-gray">Поделиться:</span>
+                        <span onclick="Share.vk(document.location.href , $('date').text() + '' + $('theme').text(), '/img/pdf-logo.jpg', '')" target="_blank">
+                               VK
+						</span>
+                        <span onclick="Share.fb(document.location.href , $('date').text() + '' +  $('theme').text(), '/img/pdf-logo.jpg', '')" target="_blank">
+                                FB
+                            </span>
+                        <span onclick="Share.ok(document.location.href , $('date').text() + '' +  $('theme').text(), '/img/pdf-logo.jpg', '')" target="_blank">
+                                OK
+                            </span>
+
+                    </div>
+				</div>
+			</div>
+		</div>
 	</footer>
 </body>
 
